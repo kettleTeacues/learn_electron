@@ -66,3 +66,34 @@ sudo apt install -y fonts-droid-fallback
 ```
 どうやらフォントの問題の様子。
 参考: [最新のLinux版のAtomやElectronの日本語表示が豆腐になる](https://qiita.com/kjunichi/items/4bb9a4ec879f85865307)
+
+# electronのウィンドウで画像が表示されない問題を解消
+次のエラーが発生した。
+```log
+Refused to load the image 'https://...' because it violates the following Content Security Policy directive: "img-src 'self' data:".
+```
+
+- `./src/renderer/index.html`の`<meta />`タグを編集する。
+```diff
+- content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
++ content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src *;"
+```
+- `img-src *;`とした。
+- やったことは「コンテンツセキュリティポリシー(CSP)の設定を変更した」という感じ。
+様々なリソースをどこから取得できるかを変更したというイメージで、今回は画像の取得元をすべて(`*`)とした。
+- 参考
+    - [コンテンツセキュリティポリシー (CSP)](https://developer.mozilla.org/ja/docs/Web/HTTP/CSP#%E4%BE%8B_3)
+
+# viteプロジェクトにおける環境変数の扱い
+- `VITE_`から始まる環境変数名を指定する。
+- 自動でプロジェクトルートの`.env`ファイルを読み込む、`dotenv`は不要。
+- `import.meta.env.['環境変数名']`で取得する。
+```sh
+# .env
+VITE_ENV_VAR=XXXXXXXXXX-XXXXXXXXXXX-XXXXXXXXXXX
+```
+
+```ts
+// example: src/renderer/src/App.tsx
+const envVar = import.meta.env.['VITE_ENV_VAR']
+```
