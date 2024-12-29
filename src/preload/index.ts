@@ -1,12 +1,12 @@
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-// Custom APIs for renderer
+// レンダラー用のカスタムAPI
 const api = {}
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
+// コンテキスト分離が有効な場合にのみ、`contextBridge` APIを使用して
+// Electron APIをレンダラーに公開し、それ以外の場合は
+// DOMグローバルに追加します。
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
@@ -15,8 +15,8 @@ if (process.contextIsolated) {
     console.error(error)
   }
 } else {
-  // @ts-ignore (define in dts)
+  // @ts-ignore (dtsで定義)
   window.electron = electronAPI
-  // @ts-ignore (define in dts)
+  // @ts-ignore (dtsで定義)
   window.api = api
 }
