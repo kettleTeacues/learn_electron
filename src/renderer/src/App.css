@@ -1,0 +1,55 @@
+/*ヘッダーセレクタ*/
+header {
+  /*幅*/
+    width: 100%;
+  /*高さ*/
+    height: 60px;
+  /*外側の余白*/
+    margin: 0;
+  /*内側の余白*/
+    padding: 0;
+  /*①背景*/
+    background: url("./images/header.png") repeat-x;
+}
+/*ハイライト1セレクタ*/
+h1 {
+  /*②左寄せで重ねる*/
+  float: left;
+  /*色*/
+  color: #fff;
+  /*外側の余白*/
+  margin: 5px 10px;
+  /*内側の余白*/
+  padding: 0;
+}
+/*インプットセレクタ*/
+input {
+/*外側の余白*/
+  margin: 18px 10px 0 20px;
+/*内側の余白*/
+  padding: 0;
+}
+  /*ボタンセレクタ*/
+button {
+  /*外側の余白*/
+  margin: 18px 10px 0 0;
+  /*内側の余白*/
+  padding: 0;
+}
+  /*イメージセレクタ*/
+img {
+  /*幅*/
+  width: 320px;
+}
+  /*ディバイデッドセレクタ*/
+div {
+  /*テキストを中央寄せ*/
+  text-align: center;
+  /*最小の高さ*/
+  min-height: 600px;
+}
+  /*パラグラフセレクタ*/
+p {
+/*テキストを中央寄せ*/
+  text-align: center;
+}
