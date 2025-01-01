@@ -1,7 +1,11 @@
-import { useState, useLayoutEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import './App.css';
 
 import pixabayImg from './images/pixabay.svg'
+// 正解音のサウンドファイルのインポート (1)
+import rightSnd from "./sounds/Right.mp3";
+// 間違い音のサウンドファイルのインポート
+import mistakeSnd from "./sounds/Mistake.mp3";
 
 function App() {
     const MIN_NUM = 3; // 画像の最小表示枚数
@@ -9,8 +13,20 @@ function App() {
     const [number, setNumber] = useState(MIN_NUM); // 一度に表示する画像の数だが、 この節では1枚だけ表示
     const [title, setTitle] = useState("スタート"); // タイトル兼スタートボタン
     const [images, setImages] = useState<string[]>([]);
+    const [word, setWord] = useState("");
     const keyword = ['犬', 'ピアノ', '猫', 'ギター', '車']
 
+    // Sounds
+    const right = new Audio(rightSnd);
+    const mistake = new Audio(mistakeSnd);
+
+    useEffect (() => {
+        // スタートメニューがクリックされたらチャンネルを受け取る
+        window.api.onReceiveMessage((e, data) => {
+            console.log('client', e, data)
+            start(e)
+        })
+    }, [])
     useLayoutEffect(() => {
         // ゲーム開始時でなければ画像を表示
         if (title != "スタート") {
@@ -24,6 +40,23 @@ function App() {
         setTitle("画像検索ワード当てクイズ");
         // 画像を表示
         addImage(null, stage, number);
+    }
+    const answer = (e) => {
+        // 答えが正しいか調べる
+        if (keyword[stage] === word) {
+            // 正解音を鳴らす(4)
+            right.play();
+            // 問題のステージを次へ
+            setStage((stage + 1) % keyword.length);
+            // 初期ヒント画像を3つに
+            setNumber(MIN_NUM);
+            // 答えが正しくない場合
+        } else {
+            // 間違い音を鳴らす
+            mistake.play();
+            // ヒント画像を1つ増やす
+            setNumber(number + 1);
+        }
     }
     // 画像の追加
     const addImage = (e: any, stg: number, num: number) => {
@@ -75,6 +108,8 @@ function App() {
     return <div className="App">
         <header>
             <h1 onClick={e => start(e)}>{title}</h1>
+            <input type="text" onChange={(e) => setWord(e.target.value)}></input>
+            <button onClick={(e) => answer(e)}>答える</button>
         </header>
 
         <div>{

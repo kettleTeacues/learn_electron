@@ -1,8 +1,10 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 
 declare global {
-  interface Window {
-    electron: ElectronAPI
-    api: unknown
-  }
+    interface Window {
+        electron: ElectronAPI
+        api: {
+            [key: string]: Function
+        }
+    }
 }
