@@ -1,0 +1,44 @@
+.to-code {
+  font-size: 35px;
+  padding: 60px 0 0 225px;
+  letter-spacing: 20px;
+}
+.from-name {
+  -ms-writing-mode: tb-rl;
+  writing-mode: vertical-rl;
+  float: left;
+  font-size: 30px;
+  padding: 250px 0px 0 40px;
+}
+.from-post {
+  -ms-writing-mode: tb-rl;
+  writing-mode: vertical-rl;
+  float: left;
+  font-size: 20px;
+  padding: 160px 0 0 40px;
+  height: 390px;
+}
+.to-name {
+  -ms-writing-mode: tb-rl;
+  writing-mode: vertical-rl;
+  float: left;
+  font-size: 36px;
+  padding: 150px 0 0 80px;
+}
+.to-post {
+  -ms-writing-mode: tb-rl;
+  writing-mode: vertical-rl;
+  float: left;
+  font-size: 36px;
+  padding: 50px 0 0 80px;
+  height: 500px;
+}
+.from-code {
+  clear: both;
+  font-size: 20px;
+  padding: 65px 0 0 30px;
+  letter-spacing: 12px;
+}
+@page {
+  margin: 0;
+}

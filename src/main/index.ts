@@ -1,74 +1,88 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import prompt from 'electron-prompt'
 import icon from '../../resources/icon.png?asset'
 
 function createWindow(): void {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
-    show: false,
-    autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+    // ブラウザウィンドウを作成します。
+    const mainWindow = new BrowserWindow({
+        width: 900,
+        height: 670,
+        show: false,
+        autoHideMenuBar: true,
+        ...(process.platform === 'linux' ? { icon } : {}),
+        webPreferences: {
+            preload: join(__dirname, '../preload/index.js'),
+            sandbox: false
+        }
+    })
+
+    mainWindow.on('ready-to-show', () => {
+        mainWindow.show()
+    })
+
+    mainWindow.webContents.setWindowOpenHandler((details) => {
+        shell.openExternal(details.url)
+        return { action: 'deny' }
+    })
+
+    // electron-vite cliに基づくレンダラーのHMR。
+    // 開発用のリモートURLまたは本番用のローカルHTMLファイルをロードします。
+    if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+        mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    } else {
+        mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
     }
-  })
-
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
-  })
-
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
-  })
-
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-  } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
-  }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+// Electronが初期化を完了し、ブラウザウィンドウを作成する準備ができたときに呼び出されるメソッドです。
+// 一部のAPIはこのイベントが発生した後にのみ使用できます。
 app.whenReady().then(() => {
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+    // Windows用のアプリユーザーモデルIDを設定します。
+    electronApp.setAppUserModelId('com.electron')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
+    // 開発中はF12でDevToolsを開閉し、本番環境ではCommandOrControl + Rを無視します。
+    // 詳細は https://github.com/alex8088/electron-toolkit/tree/master/packages/utils を参照してください。
+    app.on('browser-window-created', (_, window) => {
+        optimizer.watchWindowShortcuts(window)
+    })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+    // IPCテスト
+    ipcMain.on('ping', () => console.log('pong'))
 
-  createWindow()
+    ipcMain.handle('prompt', handleOpenPrompt)
+    createWindow()
 
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
+    app.on('activate', function () {
+        // macOSでは、ドックアイコンがクリックされ、他にウィンドウが開いていない場合にウィンドウを再作成するのが一般的です。
+        if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// すべてのウィンドウが閉じられたときに終了します。ただし、macOSでは、ユーザーがCmd + Qで明示的に終了するまで、アプリケーションとそのメニューバーがアクティブなままになるのが一般的です。
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+    if (process.platform !== 'darwin') {
+        app.quit()
+    }
 })
 
-// In this file you can include the rest of your app"s specific main process
-// code. You can also put them in separate files and require them here.
+// このファイルには、アプリの特定のメインプロセスコードを含めることができます。また、別のファイルに分けてここでrequireすることもできます。
+const handleOpenPrompt = async () => {
+    let result = ''
+
+    await prompt({
+        title: '郵便番号検索',
+        label: '郵便番号を入力してください。',
+        value: '9503122',
+        type: 'input',
+        inputAttrs: {
+            type: 'text',
+            required: 'true',
+        }
+    }).then(text => {
+        result = text || ''
+    }).catch(console.error)
+
+    return result
+}
