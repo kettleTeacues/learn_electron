@@ -1,7 +1,9 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Menu, MenuItem, MenuItemConstructorOptions, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import prompt from 'electron-prompt'
+import fs from 'fs'
+
 import icon from '../../resources/icon.png?asset'
 
 function createWindow(): void {
@@ -10,13 +12,14 @@ function createWindow(): void {
         width: 900,
         height: 670,
         show: false,
-        autoHideMenuBar: true,
+        autoHideMenuBar: false,
         ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
             sandbox: false
         }
     })
+    createMenus(mainWindow)
 
     mainWindow.on('ready-to-show', () => {
         mainWindow.show()
@@ -85,4 +88,63 @@ const handleOpenPrompt = async () => {
     }).catch(console.error)
 
     return result
+}
+const printPDF = (mainWindow: Electron.BrowserWindow, filename: string) => {
+    console.log(mainWindow.webContents)
+    mainWindow.webContents.printToPDF({
+        pageSize: {
+            width: 100*1000, height: 148*1000
+        },
+        printBackground: true
+    }).then(res => {
+        console.log(res)
+        fs.writeFile(filename, res, (err) => {
+            if (err) throw err
+            console.log('write pdf successfuly.')
+        })
+    }).catch(err => {
+        throw err
+    })
+}
+const exportPDF = (mainWindow: Electron.BrowserWindow) => {
+    dialog.showSaveDialog(mainWindow, {
+        filters: [
+            {name: 'PDF file', extensions: ['pdf']}
+        ]
+    }).then(res => {
+        console.log(res)
+        if (!res.canceled) {
+            printPDF(mainWindow, res.filePath)
+        }
+    }).catch(err => {
+        console.log(err)
+    })
+}
+
+const createMenus = (mainWindow: Electron.BrowserWindow) => {
+    const isMac = (process.platform == 'darwin')
+    const menuTemplate = [
+        ...(isMac? [{
+            label:app.name,
+            submenu: [
+                {role: 'about', label: `${app.name}について`},
+                {type: 'separator'},
+                {role: 'quit', label: `${app.name}を終了`}
+            ]
+        }]: []), {
+            label: 'ファイル',
+            submenu: [
+                {label: 'PDF書き出し', click: () => exportPDF(mainWindow)}
+            ]
+        },{
+            label: '表示',
+            submenu: [
+                {role: 'reload', label: '再読み込み'},
+                {role: 'forceReload', label: '強制的に再読み込み'},
+                {role: 'toggleDevTools', label: '開発者ツールを表示'}
+            ]
+        }
+    ] as MenuItemConstructorOptions[]
+    const template = Menu.buildFromTemplate(menuTemplate)
+    Menu.setApplicationMenu(template)
 }
