@@ -97,3 +97,14 @@ VITE_ENV_VAR=XXXXXXXXXX-XXXXXXXXXXX-XXXXXXXXXXX
 // example: src/renderer/src/App.tsx
 const envVar = import.meta.env.['VITE_ENV_VAR']
 ```
+
+# WSL: Ubuntuで日本語の文字化け解消
+VSCodeは問題なし。
+electronウィンドウを立ち上げて、その中に表示される日本語がすべて□で表示される。
+electronウィンドウでF12 -> consoleでも同様。
+
+```sh
+sudo apt install -y fonts-droid-fallback
+```
+どうやらフォントの問題の様子。
+参考: [最新のLinux版のAtomやElectronの日本語表示が豆腐になる](https://qiita.com/kjunichi/items/4bb9a4ec879f85865307)
