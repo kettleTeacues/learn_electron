@@ -1,7 +1,9 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import * as path from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+
+import { SqlClient } from './sqlite'
 
 function createWindow(): void {
     // ブラウザウィンドウを作成します。
@@ -14,7 +16,7 @@ function createWindow(): void {
         ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {
             // book: 63
-            preload: join(__dirname, '../preload/index.js'),
+            preload: path.join(__dirname, '../preload/index.js'),
             sandbox: false
         }
     })
@@ -34,7 +36,7 @@ function createWindow(): void {
     if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
         mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
     } else {
-        mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+        mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
     }
 }
 
@@ -75,3 +77,31 @@ app.on('window-all-closed', () => {
 
 // このファイルには、アプリの特定のメインプロセスコードの残りを含めることができます。
 // また、それらを別のファイルに分けて、ここでrequireすることもできます。
+const execute = (sqlClient: SqlClient, sql, param) => {
+    console.log(sql, param)
+    if (sql == 'create') {
+        return Promise.resolve().then(() => {
+            sqlClient.run(
+                `CREATE TABLE IF NOT EXISTS todoTable(
+                 id INTEGER PRIMARY KEY AUTOINCREMENT, todo TEXT)`
+            )
+        })
+    } else if (sql == 'insert') {
+        return Promise.resolve().then(() => {
+            sqlClient.run(
+                `INSERT INTO todoTable (todo) VALUES (?)`,
+                param
+            )
+        })
+    } else if (sql == 'select') {
+        return Promise.resolve().then(() => {
+            return sqlClient.all(`SELECT * FROM todoTable`)
+        })
+    }
+    return sql
+}
+
+ipcMain.handle('execSql', async (e, sql, param) => {
+    const sqlClient = new SqlClient('./todo.db')
+    return await execute(sqlClient, sql, param)
+})

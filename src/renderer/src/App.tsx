@@ -1,5 +1,5 @@
 // Reactモジュールのインポート
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 // スタイルシートのインポート
 import './App.css';
 
@@ -10,14 +10,36 @@ const App = () => {
         list: [{ id: 0, value: "ToDoリストを書く" },],
     });
 
-    const insert = (e: any) => {
-        let array = state.list;
-        const id = state.list.length;
-        const val = todoRef?.current?.value;
+    // const insert = async (e: any) => {
+    //     let array = state.list;
+    //     const id = state.list.length;
+    //     const val = todoRef?.current?.value;
 
-        array.push({ id: id, value: val || '' });
-        setState({ list: array });
+    //     array.push({ id: id, value: val || '' });
+    //     setState({ list: array });
+    // }
+    const select = async () => {
+        const rows = await window.electronApi.execSql('select')
+        const array: any[] = []
+
+        for (const row of rows) {
+            array.push({id: row.id, value: row.todo})
+        }
+        setState({list: array})
     }
+    const create = async () => {
+        // DB自体を作成する。
+        await window.electronApi.execSql('create')
+    }
+    const insert = async (e) => {
+        const val = todoRef?.current?.value
+        await window.electronApi.execSql('insert', val)
+        select()
+    }
+    useEffect(() => {
+        create()
+        select()
+    }, [])
 
     return <div className="App">
         <table>
