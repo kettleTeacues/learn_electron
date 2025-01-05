@@ -97,3 +97,111 @@ VITE_ENV_VAR=XXXXXXXXXX-XXXXXXXXXXX-XXXXXXXXXXX
 // example: src/renderer/src/App.tsx
 const envVar = import.meta.env.['VITE_ENV_VAR']
 ```
+
+# electron-builderのエラーを解消する。
+`npm create @quick-start/electron`でプロジェクトを作成したとき、`package.json`にあるビルド系のスクリプトは以下の通り。
+```json
+"scripts": {
+    "build:unpack": "npm run build && electron-builder --dir",
+    "build:win": "electron-vite build && electron-builder --win",
+    "build:mac": "electron-vite build && electron-builder --mac",
+    "build:linux": "electron-vite build && electron-builder --linux"
+}
+```
+
+このとき`electron-vite build`は問題ないが、`electron-builder --<platform>`の命令で次のエラーが出る。
+```log
+$ yarn electron-vite build
+    ⨯ Application entry file "build/electron.js" in the "~/projects/electron/dist/linux-unpacked/resources/app.asar" does not exist. Seems like a wrong configuration. failedTask=build stackTrace=Error: Application entry file "build/electron.js" in the "/home/kettle/projects/electron/dist/linux-unpacked/resources/app.asar" does not exist. 
+```
+
+これはelectronプロジェクトをビルドするときに以下のような順番をたどることが原因。
+- `electron-vite build`
+    `react`を一般的なwebサイトで配信するような形にビルド(バンドル)する。
+    バンドルしたファイルをバンドラ(今回の例では`vite`)で指定したディレクトリに出力する。
+- `electron-builder --<platform>`
+    バンドルされたwebページ(今回の例ではreactのバンドル結果)を各プラットフォームで実行出来る形にビルドする。
+    `electron-builder`で指定したディレクトリから**ビルド対象ファイル**を取得してビルドする。
+    デフォルトでは`build/electron.js`を見に行く。
+- このとき`electron-vite`の**バンドル結果**と`electron-builder`の**ビルド対象ディレクトリ**が一致していないと上記のように`not exist`エラーが発生する。
+
+解決策として`electron-builder`のビルド対象を変更する。
+`electron-builder`は次のいずれかの方法でビルド設定を定義する。
+1. `package.json`の`build`プロパティを設定する。
+2. プロジェクトルート(`package.json`のディレクトリ)に`electron-builder.yml`を作成する。
+
+今回は2の方法を採用する。
+`npm create @quick-start/electron`でプロジェクトを作成したときに作成される`electron-builder.yml`は以下の通り。
+```yml
+appId: com.electron.app
+productName: electron
+directories:
+    buildResources: build
+files:
+    - '!**/.vscode/*'
+    - '!src/*'
+    - '!electron.vite.config.{js,ts,mjs,cjs}'
+    - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+    - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+    - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+asarUnpack:
+    - resources/**
+win:
+    executableName: electron
+nsis:
+    artifactName: ${name}-${version}-setup.${ext}
+    shortcutName: ${productName}
+    uninstallDisplayName: ${productName}
+    createDesktopShortcut: always
+mac:
+    entitlementsInherit: build/entitlements.mac.plist
+    extendInfo:
+        - NSCameraUsageDescription: Application requests access to the device's camera.
+        - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
+        - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
+        - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+    notarize: false
+dmg:
+    artifactName: ${name}-${version}.${ext}
+linux:
+    target:
+        - AppImage
+        - snap
+        - deb
+    maintainer: electronjs.org
+    category: Utility
+appImage:
+    artifactName: ${name}-${version}.${ext}
+npmRebuild: false
+publish:
+    provider: generic
+    url: https://example.com/auto-updates
+```
+
+いくつか検証した結果「windowsを対象として一般的なインストーラをビルドする最小構成」は以下の通り。
+```yml
+appId: com.kettle.myapp
+productName: postcard-print
+extraMetadata:
+    main: ./out/main/index.js
+files:
+    - ./out/**/*
+win:
+    target: nsis
+nsis:
+    artifactName: ${productName}-setup.${ext}
+    shortcutName: ${productName}
+    uninstallDisplayName: ${productName}
+    createDesktopShortcut: false
+    oneClick: false
+    allowToChangeInstallationDirectory: true
+    runAfterFinish: false
+```
+- `electron-vite build`で`./out/`にバンドル結果が出力される前提とする。
+- `extraMetadata:main:`で**ビルド対象のエントリファイル**(エラー内容の`Application entry file "build/electron.js"`にあたるファイル)を指定する。
+- `files:`でビルド結果に含める／含めないファイル群を指定する。
+
+## 参考
+- [electron-builderのエントリーポイントを変える方法 | 試行錯誤な日々](https://asukiaaa.blogspot.com/2019/09/electron-builder.html)
+- [electron-builderがnode_modulesのディレクトリをapp.asarにパッケージングしない原因はapp/package.jsonに依存を書いていないからでした | ncaq](https://www.ncaq.net/2018/08/30/17/07/28/)
+- [Electronプロジェクトのビルド | ByzantinePosts](https://mijinc0.github.io/blog/post/20200816_electron_builder/)
