@@ -13,7 +13,7 @@ export class SqlClient {
 
     run = (sql: string, param?: string) => {
         const p = new Promise((ok, ng) => {
-            this.db.run(sql, param, (err, res) => {
+            this.db.run(sql, param, (err, _res) => {
                 let id = this.id || -1
                 let change = this.change || -1
 

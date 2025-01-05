@@ -31,7 +31,7 @@ const App = () => {
         // DB自体を作成する。
         await window.electronApi.execSql('create')
     }
-    const insert = async (e) => {
+    const insert = async (_e) => {
         const val = todoRef?.current?.value
         await window.electronApi.execSql('insert', val)
         select()

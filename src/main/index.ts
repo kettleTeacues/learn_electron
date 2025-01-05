@@ -101,7 +101,7 @@ const execute = (sqlClient: SqlClient, sql, param) => {
     return sql
 }
 
-ipcMain.handle('execSql', async (e, sql, param) => {
+ipcMain.handle('execSql', async (_e, sql, param) => {
     const sqlClient = new SqlClient('./todo.db')
     return await execute(sqlClient, sql, param)
 })
