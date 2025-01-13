@@ -97,3 +97,9 @@ VITE_ENV_VAR=XXXXXXXXXX-XXXXXXXXXXX-XXXXXXXXXXX
 // example: src/renderer/src/App.tsx
 const envVar = import.meta.env.['VITE_ENV_VAR']
 ```
+
+# WebDriverIOをインストール'
+参考: https://webdriver.io/docs/gettingstarted#initiate-a-webdriverio-setup
+```sh
+yarn create wdio .
+```

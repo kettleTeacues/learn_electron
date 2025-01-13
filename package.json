@@ -16,7 +16,8 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "wdio": "wdio run ./wdio.conf.ts"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
@@ -38,6 +39,10 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "@wdio/cli": "^9.5.7",
+    "@wdio/local-runner": "^9.5.7",
+    "@wdio/mocha-framework": "^9.5.0",
+    "@wdio/spec-reporter": "^9.5.0",
     "cross-env": "^7.0.3",
     "electron": "^31.0.2",
     "electron-builder": "^24.13.3",
